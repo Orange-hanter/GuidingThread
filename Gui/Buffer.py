@@ -1,4 +1,8 @@
 class Buffer:
+    """
+    Some implementation of system control version. Used for user changes rollback.
+    We provide text of chapter and there should be ability to save raw version
+    """
     def __init__(self, context: list) -> None:
         self.__buffer = dict()
         self.__buffer_ref = dict()

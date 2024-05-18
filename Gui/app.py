@@ -4,6 +4,7 @@ from tkinter import *
 from tkinter import ttk
 from tkinter import filedialog
 
+from Gui.ModalsWindows import ConfigWindow
 from Gui.internalize import General
 from Gui.Buffer import Buffer
 from Gui import midas
@@ -37,15 +38,23 @@ class MainWindow:
         # Zone of text
         text_frame = LabelFrame(frame, text=General.text_zone[self.Lk])
         text_frame.grid(row=0, column=0, padx=20, pady=20, sticky="nsew")
-        self.w_text_frame = text_frame
+        self.__w_text_frame = text_frame
 
         text_widget = Text(text_frame, bg="black", fg="white", borderwidth=0, relief="sunken")
         text_widget.pack(fill=BOTH, expand=True)
-        self.text_widget = text_widget
-        self.text_widget.bind('<KeyRelease>', self.__text_updated)
+        text_widget.bind('<KeyRelease>', self.__text_updated)
+        self.__text_widget = text_widget
+
+        # Button of editing text
+        btn_frame = ttk.Frame(text_frame)
+        btn_frame.pack()
+        self.undo_btn = ttk.Button(btn_frame, text="U", width=1)
+        self.undo_btn.pack(side=LEFT)
+        self.cfg_btn = ttk.Button(btn_frame, text="Cfg", width=1, command=)
+        self.cfg_btn.pack(side=LEFT)
 
         # Zone context
-        lf = ttk.LabelFrame(frame, text="context")
+        lf = ttk.LabelFrame(frame, text="Context")
         lf.grid(row=0, column=1, sticky="nsew", ipadx=5, ipady=5)
         self.w_label_frame = lf
 
@@ -59,15 +68,16 @@ class MainWindow:
         #    root, text="Х", command=self.close_window, width=1)
         # close_button.place(relx=1.0, rely=0, anchor="ne")
 
+
         # Перемещение окна с помощью мыши
         root.bind("<ButtonPress-1>", self.on_press)
-        root.bind("<B1-Motion>", self.on_drag)
+        #root.bind("<B1-Motion>", self.on_drag)
 
         self.root = root
 
     def run(self):
-        self.text_widget.insert(END, General.text_preview[self.Lk])
-        self.text_widget.configure(state="disabled")
+        self.__text_widget.insert(END, General.text_preview[self.Lk])
+        self.__text_widget.configure(state="disabled")
         # Запускаем главный цикл обработки событий
         self.root.mainloop()
 
@@ -83,6 +93,10 @@ class MainWindow:
 
     # BL
     def process_data(self):
+        """
+        process selected chapters and save them at file
+        """
+        # TODO file name should be configurable
         with open("./result.txt", "w") as f:
             print("Selected items:", self.__chapter_selected)
             for item in self.__chapter_selected.keys():
@@ -128,14 +142,14 @@ class MainWindow:
         print(self.__chapter_selected[chapter].get())
 
     def display_chapter_text(self, chapter, event):
-        if self.text_widget["state"] == "disabled":
-            self.text_widget.config(state=NORMAL)
+        if self.__text_widget["state"] == "disabled":
+            self.__text_widget.config(state=NORMAL)
         self.__buffer.chapter_focus = chapter
         text = self.__buffer.get(chapter)
-        self.text_widget.replace("1.0", END, text)
+        self.__text_widget.replace("1.0", END, text)
 
     def __text_updated(self, *args, **kwargs):
         if self.__buffer.chapter_focus == "":
             return None
-        text = self.text_widget.get("1.0", END)
+        text = self.__text_widget.get("1.0", END)
         self.__buffer.update(text=text)
