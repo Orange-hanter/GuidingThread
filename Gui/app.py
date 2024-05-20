@@ -8,6 +8,8 @@ from Gui.ModalsWindows import ConfigWindow, Window
 from Gui.internalize import General
 from Gui.Buffer import Buffer
 from Gui import midas
+from Gui import GptConnector
+
 from functools import partial
 
 
@@ -109,8 +111,8 @@ class MainWindow:
             print("Selected items:", self.__chapter_selected)
             for item in self.__chapter_selected.keys():
                 if self.__chapter_selected[item].get():
-                    f.write(self.__buffer.get(item))
-
+                    answer = GptConnector.request_extraction(self.__buffer.get(item))
+                    f.write(answer)
 
     def close_window(self):
         self.__root.destroy()
