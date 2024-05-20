@@ -23,6 +23,7 @@ class MainWindow:
         root.title(General.title[self.Lk])
         root.overrideredirect(False)
         root.resizable(True, True)
+        root.title("Procesnavigator helper")
 
         # Устанавливаем размер окна
         width, height = root.winfo_screenwidth(), root.winfo_screenheight()
@@ -61,7 +62,7 @@ class MainWindow:
 
         # Перемещение окна с помощью мыши
         root.bind("<ButtonPress-1>", self.on_press)
-        root.bind("<B1-Motion>", self.on_drag)
+        #root.bind("<B1-Motion>", self.on_drag)
 
         self.root = root
 

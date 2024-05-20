@@ -1,4 +1,5 @@
 import Gui.app
 
-session = app.MainWindow()
-session.run()
+if __name__ == '__main__':
+    session = Gui.app.MainWindow()
+    session.run()
