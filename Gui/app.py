@@ -44,6 +44,15 @@ class MainWindow:
         text_widget.pack(fill=BOTH, expand=True)
         self.text_widget = text_widget
         self.text_widget.bind('<KeyRelease>', self.__text_updated)
+        # Button of editing text
+        btn_frame = ttk.Frame(text_frame)
+        btn_frame.pack()
+        self.__undo_btn = ttk.Button(btn_frame, text="Undo", width=1)
+        self.__undo_btn.bind("<ButtonPress-1>", self.__reset_n_display_focused_chapter_text)
+        self.__undo_btn.pack(side=LEFT)
+
+        self.cfg_btn = ttk.Button(btn_frame, text="Cfg", width=1, command=self.__open_config_window)
+        self.cfg_btn.pack(side=LEFT)
 
         # Zone context
         lf = ttk.LabelFrame(frame, text="context")
@@ -79,8 +88,14 @@ class MainWindow:
 
     def on_press(self, event):
         global offset_x, offset_y
-        offset_x = event.x_root - self.root.winfo_x()
-        offset_y = event.y_root - self.root.winfo_y()
+        offset_x = event.x_root - self.__root.winfo_x()
+        offset_y = event.y_root - self.__root.winfo_y()
+
+    def __open_config_window(self):
+        __config_window = ConfigWindow(self.__root,
+                                       self.__analyzer.get_configuration,
+                                       self.__analyzer.update_configuration,
+                                       self.__display_context_menu)
 
     # BL
     def process_data(self):
@@ -92,7 +107,7 @@ class MainWindow:
 
 
     def close_window(self):
-        self.root.destroy()
+        self.__root.destroy()
 
     def open_file_dialog(self):
         file_path = filedialog.askopenfilename(title="Select a File",
@@ -137,6 +152,11 @@ class MainWindow:
 
     def __text_updated(self, *args, **kwargs):
         if self.__buffer.chapter_focus == "":
+    def __reset_n_display_focused_chapter_text(self, event):
+        if not (focus := self.__buffer.focused_chapter()) == "":
+            self.__buffer.reset_focused()
+            self.display_chapter_text(focus, event)
+
             return None
         text = self.text_widget.get("1.0", END)
         self.__buffer.update(text=text)
