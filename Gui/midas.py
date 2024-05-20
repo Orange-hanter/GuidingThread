@@ -9,23 +9,41 @@ from pypdf import PdfReader
 
 class PDFP:
     """Processor PDF
-
+        context - parsed and converted to data menu
+        metadata - information about chapter
     """
 
     # (\d\.(?:\d*\.){0,}) (\p{L}+ \p{L}*){0,}\W+(\d \s?\d?)
-    menu_pattern = r'(\d\..?\.) (\S+ \.) \W+(\d\s?\d?)'
+    __config = dict(menu_pattern=r'(\d\..?\.) (\S+ \.) \W+(\d\s?\d?)',
+                    menu_page=2,
+                    menu_length=1)
     table_of_content = list()
 
     def __init__(self, path: str = "") -> None:
         self.pdf_source = path
         self._content_table = OrderedDict()
+        self.reader = None
 
     def run(self):
+        # TODO handle the situation when the file is not processed correctly
         self.reader = PdfReader(self.pdf_source)
-        self.gen_content_table(self.get_text(2, 1))
+        self.gen_content_table(self._get_menu_text())
 
     def set_source(self, path: str):
         self.pdf_source = path
+
+    def update_configuration(self, key, value, critical=True):
+        try:
+            self.__config[key] = value
+            if critical:
+                self.gen_content_table(self._get_menu_text())
+            # TODO specify exception
+        except:
+            print(f"Error midas couldn't update configuration: key={key}, value={value}", )
+
+    def get_configuration(self, key) -> str | int | None:
+        if key in self.__config:
+            return self.__config[key]
 
     def gen_content_table(self, text: str) -> None:
         """return content table for future parsing
@@ -35,7 +53,7 @@ class PDFP:
         Returns:
             str: _description_
         """
-        matches = re.findall(self.menu_pattern, text)
+        matches = re.findall(self.__config["menu_pattern"], text)
         matches = [list(item) for item in matches]
 
         chapter, title, page = 0, 1, 2
@@ -80,25 +98,43 @@ class PDFP:
         kees = [key for key in self._content_table.keys()]
         return self._content_table[kees[id]]
 
-    def _get_next_chapter_metadata(self, chapter: str) -> str:
+    def _get_next_chapter_metadata(self, chapter: str) -> list | None:
+        """
+        Return next chapter metadata from table of content.
+        Search occur by chapter number that encoded in str.
+        Last chapter return None.
+        """
         kees = [key for key in self._content_table.keys()]
         index = kees.index(chapter)
         # todo check the end of file
-        return self._content_table[kees[index + 1]]
+        try:
+            return self._content_table[kees[index + 1]]
+        except IndexError:
+            return None
+
+    def _get_menu_text(self) -> str:
+        return self.get_text(self.__config['menu_page'], self.__config['menu_length'])
 
     def get_context(self):
+        """
+        return result of processing pdf menu, nested list of [chapter_number:str, name_chapter:str, page:int]
+        """
         return self._content_table.values()
+
     @cache
     def get_chapter(self, chapter: str | None = None) -> str:
         """
-        todo get fuzzy logic for name or index of chapter
-        Args:
-            chapter (int, optional): _description_. Defaults to 1.
+            Return text of chapter
         """
+        # TODO get fuzzy logic for name or index of chapter
         chapter_metadata = self._get_metadata_by_id(chapter if chapter else 0)
         chapter_metadata_next = self._get_next_chapter_metadata(chapter_metadata[0])
-        pg_start, pg_end = chapter_metadata[2], chapter_metadata_next[2]
+        if chapter_metadata_next is None:
+            pg_start, pg_end = chapter_metadata[2], len(self.reader.pages)
+        else:
+            pg_start, pg_end = chapter_metadata[2], chapter_metadata_next[2]
         raw_chapter_text_list = ""
+        # TODO in case of Index error return pages till end of file
         for page in range(pg_start, pg_end):
             raw_chapter_text_list += self.get_text(page)
         return raw_chapter_text_list
@@ -109,7 +145,7 @@ class PDFP:
             yield self.get_chapter(self._get_metadata_by_id(chapter)[ch_id])
 
     def isError(self):
-        # TODO
+        # TODO functional event handler in case bad pdf processing
         return 0
 
 
